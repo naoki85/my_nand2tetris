@@ -67,9 +67,10 @@ func (p *Parser) commandType() string {
 	if regexp.MustCompile(`^@\d`).MatchString(p.row) {
 		return ACOMMAND
 	}
-	switch p.row {
-	case CCOMMAND:
+	if regexp.MustCompile(`\s*=\s*`).MatchString(p.row) {
 		return CCOMMAND
+	}
+	switch p.row {
 	case LCOMMAND:
 		return LCOMMAND
 	default:
@@ -81,16 +82,24 @@ func (p *Parser) symbol() {
 	log.Fatal("Must be implemented")
 }
 
-func (p *Parser) dest() {
-	log.Fatal("Must be implemented")
+func (p *Parser) dest() string {
+	mnemonic := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)[0]
+	if mnemonic == "" {
+		return "null"
+	}
+	return mnemonic
 }
 
-func (p *Parser) comp() {
-	log.Fatal("Must be implemented")
+func (p *Parser) comp() string {
+	sliceMnemonic := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)
+	if len(sliceMnemonic) < 2 || sliceMnemonic[1] == "" {
+		return "null"
+	}
+	return sliceMnemonic[1]
 }
 
-func (p *Parser) jump() {
-	log.Fatal("Must be implemented")
+func (p *Parser) jump() string {
+	return "null"
 }
 
 func (p *Parser) getAddress() string {

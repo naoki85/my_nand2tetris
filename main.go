@@ -27,8 +27,12 @@ func main() {
 	defer file.Close()
 
 	for true {
-		output := compileToBinary(parser) + "\n"
-		_, err = file.Write(([]byte)(output))
+		output := compileToBinary(parser)
+		if len(output) != 16 {
+			fmt.Printf("err: Could not parse code %s", output)
+			break
+		}
+		_, err = file.Write(([]byte)(output + "\n"))
 		if err != nil {
 			fmt.Printf("err: Could not write code %s", err.Error())
 			break
@@ -44,17 +48,15 @@ func compileToBinary(p Parser) string {
 	switch p.commandType() {
 	case ACOMMAND:
 		return p.getAddress()
+	case CCOMMAND:
+		var binary string
+		code := Code{}
+		binary = "111"
+		binary = binary + code.comp(p.comp())
+		binary = binary + code.dest(p.dest())
+		binary = binary + code.jump(p.jump())
+		return binary
 	default:
-		str := p.row
-		if str == "D=A" {
-			return "1110110000010000"
-		}
-		if str == "D=D+A" {
-			return "1110000010010000"
-		}
-		if str == "M=D" {
-			return "1110001100001000"
-		}
-		return str
+		return ""
 	}
 }
