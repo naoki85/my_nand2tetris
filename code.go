@@ -34,10 +34,26 @@ func (c Code) comp(mnemonic string) string {
 }
 
 func (c Code) jump(mnemonic string) string {
-	if mnemonic == "null" {
+	switch mnemonic {
+	case "null":
 		return "000"
+	case "JGT":
+		return "001"
+	case "JEQ":
+		return "010"
+	case "JGE":
+		return "011"
+	case "JLT":
+		return "100"
+	case "JNE":
+		return "101"
+	case "JLE":
+		return "110"
+	case "JMP":
+		return "111"
+	default:
+		return ""
 	}
-	return "000"
 }
 
 func (c Code) memoryComp(mnemonic string) string {

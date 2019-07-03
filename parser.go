@@ -67,7 +67,7 @@ func (p *Parser) commandType() string {
 	if regexp.MustCompile(`^@\d`).MatchString(p.row) {
 		return ACOMMAND
 	}
-	if regexp.MustCompile(`\s*=\s*`).MatchString(p.row) {
+	if regexp.MustCompile(`\s*(=|;)\s*`).MatchString(p.row) {
 		return CCOMMAND
 	}
 	switch p.row {
@@ -83,23 +83,36 @@ func (p *Parser) symbol() {
 }
 
 func (p *Parser) dest() string {
-	mnemonic := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)[0]
-	if mnemonic == "" {
+	slice := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)
+	if len(slice) != 2 {
 		return "null"
 	}
-	return mnemonic
+	return slice[0]
 }
 
 func (p *Parser) comp() string {
-	sliceMnemonic := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)
-	if len(sliceMnemonic) < 2 || sliceMnemonic[1] == "" {
-		return "null"
+	if regexp.MustCompile(`\s*=\s*`).MatchString(p.row) {
+		sliceMnemonic := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)
+		if len(sliceMnemonic) < 2 || sliceMnemonic[1] == "" {
+			return "null"
+		}
+		return sliceMnemonic[1]
+	} else if regexp.MustCompile(`\s*;\s*`).MatchString(p.row) {
+		sliceMnemonic := regexp.MustCompile(`\s*;\s*`).Split(p.row, 2)
+		if len(sliceMnemonic) < 2 || sliceMnemonic[0] == "" {
+			return "null"
+		}
+		return sliceMnemonic[0]
 	}
-	return sliceMnemonic[1]
+	return "null"
 }
 
 func (p *Parser) jump() string {
-	return "null"
+	sliceMnemonic := regexp.MustCompile(`\s*;\s*`).Split(p.row, 2)
+	if len(sliceMnemonic) < 2 || sliceMnemonic[0] == "" {
+		return "null"
+	}
+	return sliceMnemonic[1]
 }
 
 func (p *Parser) getAddress() string {
