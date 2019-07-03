@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 )
 
 func main() {
@@ -11,13 +13,15 @@ func main() {
 		return
 	}
 	filePath := os.Args[1]
-	outputFilePath := "test_files/Add.hack"
 
 	parser, err := initializeParser(filePath)
 	if err != nil {
 		fmt.Printf("err: Could not init parser %s", err.Error())
 		return
 	}
+
+	inputFileName := regexp.MustCompile(`[0-9a-zA-Z_]*.asm$`).FindString(filePath)
+	outputFilePath := strings.Split(inputFileName, ".")[0] + ".hack"
 
 	file, err := os.Create(outputFilePath)
 	if err != nil {
@@ -29,7 +33,7 @@ func main() {
 	for true {
 		output := compileToBinary(parser)
 		if len(output) != 16 {
-			fmt.Printf("err: Could not parse code %s", output)
+			fmt.Printf("err: Could not parse code %s", parser.row)
 			break
 		}
 		_, err = file.Write(([]byte)(output + "\n"))
