@@ -51,7 +51,7 @@ func main() {
 	parser.ResetRowNumber()
 
 	for true {
-		output := compileToBinary(parser)
+		output := compileToBinary(parser, symbolTable)
 		if len(output) != 16 {
 			fmt.Printf("err: Could not parse code %s", parser.row)
 			break
@@ -68,10 +68,10 @@ func main() {
 	}
 }
 
-func compileToBinary(p Parser) string {
+func compileToBinary(p Parser, s SymbolTable) string {
 	switch p.commandType() {
 	case ACOMMAND:
-		return p.getAddress()
+		return p.getAddress(s)
 	case CCOMMAND:
 		var binary string
 		code := Code{}

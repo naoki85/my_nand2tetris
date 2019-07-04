@@ -68,7 +68,7 @@ func (p *Parser) advance() {
 }
 
 func (p *Parser) commandType() string {
-	if regexp.MustCompile(`^@(R)?\d`).MatchString(p.row) {
+	if regexp.MustCompile(`^@`).MatchString(p.row) {
 		return ACOMMAND
 	}
 	if regexp.MustCompile(`\s*(=|;)\s*`).MatchString(p.row) {
@@ -119,9 +119,15 @@ func (p *Parser) jump() string {
 	return sliceMnemonic[1]
 }
 
-func (p *Parser) getAddress() string {
-	position, _ := strconv.Atoi(regexp.MustCompile(`\d+`).FindString(p.row))
-	binaryPosition := fmt.Sprintf("%b", position)
+func (p *Parser) getAddress(symbolTable SymbolTable) string {
+	position := strings.Replace(p.row, "@", "", 1)
+	var address int
+	if symbolTable.contains(position) {
+		address = symbolTable.getAddress(position)
+	} else {
+		address, _ = strconv.Atoi(position)
+	}
+	binaryPosition := fmt.Sprintf("%b", address)
 	b := "0"
 	for i := 1; i < 16-len(binaryPosition); i++ {
 		b = b + "0"
