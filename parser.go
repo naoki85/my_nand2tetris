@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Parser struct {
@@ -34,7 +35,9 @@ func initializeParser(filePath string) (Parser, error) {
 		if skipReadingRow(scanner.Text()) {
 			continue
 		}
-		p.rows = append(p.rows, scanner.Text())
+		text := strings.Split(scanner.Text(), "//")[0]
+		text = strings.TrimSpace(text)
+		p.rows = append(p.rows, text)
 	}
 	if err = scanner.Err(); err != nil {
 		return p, err
@@ -45,7 +48,8 @@ func initializeParser(filePath string) (Parser, error) {
 }
 
 func skipReadingRow(text string) bool {
-	if len(text) == 0 || regexp.MustCompile(`^//`).MatchString(text) {
+	if len(text) == 0 || regexp.MustCompile(`^//`).MatchString(text) ||
+		regexp.MustCompile(`^\(.*\)$`).MatchString(text) {
 		return true
 	}
 	return false
@@ -64,7 +68,7 @@ func (p *Parser) advance() {
 }
 
 func (p *Parser) commandType() string {
-	if regexp.MustCompile(`^@\d`).MatchString(p.row) {
+	if regexp.MustCompile(`^@(R)?\d`).MatchString(p.row) {
 		return ACOMMAND
 	}
 	if regexp.MustCompile(`\s*(=|;)\s*`).MatchString(p.row) {
@@ -123,4 +127,9 @@ func (p *Parser) getAddress() string {
 		b = b + "0"
 	}
 	return b + binaryPosition
+}
+
+func (p *Parser) ResetRowNumber() {
+	p.rowNumber = 0
+	p.row = p.rows[p.rowNumber]
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -29,6 +30,25 @@ func main() {
 		return
 	}
 	defer file.Close()
+
+	symbolTable, _ := initializeSymbolTable()
+	setDefinedSymbol(symbolTable)
+
+	for true {
+		if regexp.MustCompile(`^@`).MatchString(parser.row) {
+			label := strings.Replace(parser.row, "@", "", 1)
+			if !symbolTable.contains(label) && !symbolTable.contains("R"+label) {
+				symbolTable.addEntry(label, symbolTable.variableAddressCounter)
+				symbolTable.variableAddressCounter += 1
+			}
+		}
+		if !parser.hasMoreCommand() {
+			break
+		}
+		parser.advance()
+	}
+
+	parser.ResetRowNumber()
 
 	for true {
 		output := compileToBinary(parser)
@@ -62,5 +82,20 @@ func compileToBinary(p Parser) string {
 		return binary
 	default:
 		return ""
+	}
+}
+
+func setDefinedSymbol(s SymbolTable) {
+	s.addEntry("SP", 0)
+	s.addEntry("LCL", 1)
+	s.addEntry("ARG", 2)
+	s.addEntry("THIS", 3)
+	s.addEntry("THAT", 4)
+	s.addEntry("SCREEN", 16384)
+	s.addEntry("KBD", 24576)
+
+	for i := 0; i < 16; i++ {
+		label := "R" + strconv.Itoa(i)
+		s.addEntry(label, i)
 	}
 }
