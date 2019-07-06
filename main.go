@@ -11,14 +11,14 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Print("err: 1 argument is required")
-		return
+		os.Exit(1)
 	}
 	filePath := os.Args[1]
 
 	parser, err := InitializeParser(filePath)
 	if err != nil {
 		fmt.Printf("err: Could not init parser %s", err.Error())
-		return
+		os.Exit(2)
 	}
 
 	inputFileName := regexp.MustCompile(`[0-9a-zA-Z_]*.asm$`).FindString(filePath)
@@ -27,7 +27,7 @@ func main() {
 	file, err := os.Create(outputFilePath)
 	if err != nil {
 		fmt.Printf("err: Could not init parser %s", err.Error())
-		return
+		os.Exit(3)
 	}
 	defer file.Close()
 
@@ -57,12 +57,12 @@ func main() {
 		output := compileToBinary(&parser, symbolTable)
 		if len(output) != 16 {
 			fmt.Printf("err: Could not parse code %s", parser.row)
-			break
+			os.Exit(4)
 		}
 		_, err = file.Write(([]byte)(output + "\n"))
 		if err != nil {
 			fmt.Printf("err: Could not write code %s", err.Error())
-			break
+			os.Exit(5)
 		}
 		if !parser.HasMoreCommand() {
 			break
