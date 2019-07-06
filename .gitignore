@@ -1,5 +1,5 @@
 .idea
-test_files
 main
 nand2tetris_assembler
+*.asm
 *.hack
