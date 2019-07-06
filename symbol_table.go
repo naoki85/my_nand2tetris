@@ -9,7 +9,7 @@ const (
 	MinVariableAddress int = 0
 )
 
-func initializeSymbolTable() (SymbolTable, error) {
+func InitializeSymbolTable() (SymbolTable, error) {
 	symbolTable := SymbolTable{
 		map[string]int{},
 		MinVariableAddress,
@@ -17,16 +17,16 @@ func initializeSymbolTable() (SymbolTable, error) {
 	return symbolTable, nil
 }
 
-func (s SymbolTable) addEntry(symbol string, address int) {
+func (s SymbolTable) AddEntry(symbol string, address int) {
 	s.table[symbol] = address
 }
 
-func (s SymbolTable) contains(symbol string) bool {
+func (s SymbolTable) Contains(symbol string) bool {
 	_, ok := s.table[symbol]
 	return ok
 }
 
-func (s SymbolTable) getAddress(symbol string) int {
+func (s SymbolTable) GetAddress(symbol string) int {
 	v, _ := s.table[symbol]
 	return v
 }

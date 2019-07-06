@@ -5,7 +5,7 @@ import "regexp"
 type Code struct {
 }
 
-func (c Code) dest(mnemonic string) string {
+func (c Code) Dest(mnemonic string) string {
 	binary := ""
 	if regexp.MustCompile(`A`).MatchString(mnemonic) {
 		binary = binary + "1"
@@ -25,7 +25,7 @@ func (c Code) dest(mnemonic string) string {
 	return binary
 }
 
-func (c Code) comp(mnemonic string) string {
+func (c Code) Comp(mnemonic string) string {
 	if regexp.MustCompile(`M`).MatchString(mnemonic) {
 		return c.memoryComp(mnemonic)
 	} else {
@@ -33,7 +33,7 @@ func (c Code) comp(mnemonic string) string {
 	}
 }
 
-func (c Code) jump(mnemonic string) string {
+func (c Code) Jump(mnemonic string) string {
 	switch mnemonic {
 	case "null":
 		return "000"

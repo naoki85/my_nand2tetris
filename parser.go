@@ -17,13 +17,12 @@ type Parser struct {
 }
 
 const (
-	ACOMMAND string = "A_COMMAND"
-	CCOMMAND string = "C_COMMAND"
-	LCOMMAND string = "L_COMMAND"
-	// RamAddress int  = 16
+	ACommand string = "A_COMMAND"
+	CCommand string = "C_COMMAND"
+	LCommand string = "L_COMMAND"
 )
 
-func initializeParser(filePath string) (Parser, error) {
+func InitializeParser(filePath string) (Parser, error) {
 	fp, err := os.Open(filePath)
 	if err != nil {
 		fmt.Printf("err: Could not open %s", filePath)
@@ -56,38 +55,38 @@ func skipReadingRow(text string) bool {
 	return false
 }
 
-func (p *Parser) hasMoreCommand() bool {
+func (p *Parser) HasMoreCommand() bool {
 	if p.rowNumber+1 < len(p.rows) {
 		return true
 	}
 	return false
 }
 
-func (p *Parser) advance() {
+func (p *Parser) Advance() {
 	p.rowNumber = p.rowNumber + 1
 	p.row = p.rows[p.rowNumber]
 }
 
-func (p *Parser) commandType() string {
+func (p *Parser) CommandType() string {
 	if regexp.MustCompile(`^@`).MatchString(p.row) {
-		return ACOMMAND
+		return ACommand
 	}
 	if regexp.MustCompile(`\s*(=|;)\s*`).MatchString(p.row) {
-		return CCOMMAND
+		return CCommand
 	}
 	if regexp.MustCompile(`^\(.*\)$`).MatchString(p.row) {
-		return LCOMMAND
+		return LCommand
 	}
 	return ""
 }
 
 func (p *Parser) Symbol() string {
 	symbol := strings.Replace(p.row, "(", "", 1)
-	symbol  = strings.Replace(symbol, ")", "", 1)
+	symbol = strings.Replace(symbol, ")", "", 1)
 	return symbol
 }
 
-func (p *Parser) dest() string {
+func (p *Parser) Dest() string {
 	slice := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)
 	if len(slice) != 2 {
 		return "null"
@@ -95,7 +94,7 @@ func (p *Parser) dest() string {
 	return slice[0]
 }
 
-func (p *Parser) comp() string {
+func (p *Parser) Comp() string {
 	if regexp.MustCompile(`\s*=\s*`).MatchString(p.row) {
 		sliceMnemonic := regexp.MustCompile(`\s*=\s*`).Split(p.row, 2)
 		if len(sliceMnemonic) < 2 || sliceMnemonic[1] == "" {
@@ -112,7 +111,7 @@ func (p *Parser) comp() string {
 	return "null"
 }
 
-func (p *Parser) jump() string {
+func (p *Parser) Jump() string {
 	sliceMnemonic := regexp.MustCompile(`\s*;\s*`).Split(p.row, 2)
 	if len(sliceMnemonic) < 2 || sliceMnemonic[0] == "" {
 		return "null"
@@ -120,18 +119,18 @@ func (p *Parser) jump() string {
 	return sliceMnemonic[1]
 }
 
-func (p *Parser) getAddress(symbolTable SymbolTable) string {
+func (p *Parser) GetAddress(symbolTable SymbolTable) string {
 	var position string
 	position = strings.Replace(p.row, "@", "", 1)
 
 	var address int
 	var err error
-	if symbolTable.contains(position) {
-		address = symbolTable.getAddress(position)
+	if symbolTable.Contains(position) {
+		address = symbolTable.GetAddress(position)
 	} else {
 		address, err = strconv.Atoi(position)
 		if err != nil {
-			symbolTable.addEntry(position, p.ramAddress)
+			symbolTable.AddEntry(position, p.ramAddress)
 			address = p.ramAddress
 			p.ramAddress = p.ramAddress + 1
 		}
