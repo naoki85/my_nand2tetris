@@ -35,12 +35,11 @@ func main() {
 	setDefinedSymbol(symbolTable)
 
 	for true {
-		if regexp.MustCompile(`^@`).MatchString(parser.row) {
-			label := strings.Replace(parser.row, "@", "", 1)
-			if !symbolTable.contains(label) && !symbolTable.contains("R"+label) {
-				symbolTable.addEntry(label, symbolTable.variableAddressCounter)
+		if parser.commandType() == LCOMMAND {
+			label := parser.Symbol()
+			symbolTable.addEntry(label, symbolTable.variableAddressCounter)
+		} else {
 				symbolTable.variableAddressCounter += 1
-			}
 		}
 		if !parser.hasMoreCommand() {
 			break
@@ -51,7 +50,11 @@ func main() {
 	parser.ResetRowNumber()
 
 	for true {
-		output := compileToBinary(parser, symbolTable)
+		if parser.commandType() == LCOMMAND {
+			parser.advance()
+			continue
+		}
+		output := compileToBinary(&parser, symbolTable)
 		if len(output) != 16 {
 			fmt.Printf("err: Could not parse code %s", parser.row)
 			break
@@ -68,7 +71,7 @@ func main() {
 	}
 }
 
-func compileToBinary(p Parser, s SymbolTable) string {
+func compileToBinary(p *Parser, s SymbolTable) string {
 	switch p.commandType() {
 	case ACOMMAND:
 		return p.getAddress(s)

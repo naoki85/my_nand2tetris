@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -11,15 +10,17 @@ import (
 )
 
 type Parser struct {
-	rows      []string
-	row       string
-	rowNumber int
+	rows       []string
+	row        string
+	rowNumber  int
+	ramAddress int
 }
 
 const (
 	ACOMMAND string = "A_COMMAND"
 	CCOMMAND string = "C_COMMAND"
 	LCOMMAND string = "L_COMMAND"
+	// RamAddress int  = 16
 )
 
 func initializeParser(filePath string) (Parser, error) {
@@ -44,12 +45,12 @@ func initializeParser(filePath string) (Parser, error) {
 	}
 	p.rowNumber = 0
 	p.row = p.rows[0]
+	p.ramAddress = 16
 	return p, nil
 }
 
 func skipReadingRow(text string) bool {
-	if len(text) == 0 || regexp.MustCompile(`^//`).MatchString(text) ||
-		regexp.MustCompile(`^\(.*\)$`).MatchString(text) {
+	if len(text) == 0 || regexp.MustCompile(`^//`).MatchString(text) {
 		return true
 	}
 	return false
@@ -74,16 +75,16 @@ func (p *Parser) commandType() string {
 	if regexp.MustCompile(`\s*(=|;)\s*`).MatchString(p.row) {
 		return CCOMMAND
 	}
-	switch p.row {
-	case LCOMMAND:
+	if regexp.MustCompile(`^\(.*\)$`).MatchString(p.row) {
 		return LCOMMAND
-	default:
-		return ""
 	}
+	return ""
 }
 
-func (p *Parser) symbol() {
-	log.Fatal("Must be implemented")
+func (p *Parser) Symbol() string {
+	symbol := strings.Replace(p.row, "(", "", 1)
+	symbol  = strings.Replace(symbol, ")", "", 1)
+	return symbol
 }
 
 func (p *Parser) dest() string {
@@ -120,12 +121,20 @@ func (p *Parser) jump() string {
 }
 
 func (p *Parser) getAddress(symbolTable SymbolTable) string {
-	position := strings.Replace(p.row, "@", "", 1)
+	var position string
+	position = strings.Replace(p.row, "@", "", 1)
+
 	var address int
+	var err error
 	if symbolTable.contains(position) {
 		address = symbolTable.getAddress(position)
 	} else {
-		address, _ = strconv.Atoi(position)
+		address, err = strconv.Atoi(position)
+		if err != nil {
+			symbolTable.addEntry(position, p.ramAddress)
+			address = p.ramAddress
+			p.ramAddress = p.ramAddress + 1
+		}
 	}
 	binaryPosition := fmt.Sprintf("%b", address)
 	b := "0"

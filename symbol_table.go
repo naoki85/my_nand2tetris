@@ -6,7 +6,7 @@ type SymbolTable struct {
 }
 
 const (
-	MinVariableAddress int = 16
+	MinVariableAddress int = 0
 )
 
 func initializeSymbolTable() (SymbolTable, error) {
