@@ -1,6 +1,7 @@
 .idea
 main
-assembler/assembler
+assembler/assemblor
+vm_translator/vm_translator
 nand2tetris_assembler
 *.asm
 *.hack
