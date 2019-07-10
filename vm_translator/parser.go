@@ -8,6 +8,18 @@ import (
 	"strings"
 )
 
+const (
+	CArithmetic = "C_ARITHMETIC"
+	CPush = "C_PUSH"
+	CPop = "C_POP"
+	CLabel = "C_LABEL"
+	CGoto = "C_GOTO"
+	CIf = "C_IF"
+	CFunction = "C_FUNCTION"
+	CReturn = "C_Return"
+	CCall = "C_CALL"
+)
+
 type Parser struct {
 	rows       []string
 	row        string
@@ -56,4 +68,32 @@ func (p *Parser) HasMoreCommand() bool {
 func (p *Parser) Advance() {
 	p.rowNumber = p.rowNumber + 1
 	p.row = p.rows[p.rowNumber]
+}
+
+func (p *Parser) CommandType() string {
+	if (regexp.MustCompile(`^push`).MatchString(p.row)) {
+		return CPush
+	} else if (regexp.MustCompile(`^add`).MatchString(p.row)) {
+		return CArithmetic
+	} else {
+		return ""
+	}
+}
+
+func (p *Parser) Arg1() string {
+	if p.CommandType() == CArithmetic {
+		return "add"
+	}
+	return strings.Split(p.row, " ")[1]
+}
+
+func (p *Parser) Arg2() string {
+	if (p.CommandType() == CPush || p.CommandType() == CPop ||
+	p.CommandType() == CFunction || p.CommandType() == CCall) {
+		return strings.Split(p.row, " ")[2]
+	} else {
+		fmt.Println("err: Invalid command type")
+		os.Exit(1)
+	}
+	return ""
 }
