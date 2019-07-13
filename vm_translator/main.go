@@ -30,9 +30,9 @@ func main() {
 				fmt.Printf("err: Could not convert integer from string %s", err.Error())
 				os.Exit(3)
 			}
-			codeWriter.writePushPop(parser.CommandType(), parser.Arg1(), index)
+			codeWriter.WritePushPop(parser.CommandType(), parser.Arg1(), index)
 		} else if parser.CommandType() == CArithmetic {
-			codeWriter.writeArithmetic(parser.row)
+			codeWriter.WriteArithmetic(parser.row)
 		}
 
 		if !parser.HasMoreCommand() {

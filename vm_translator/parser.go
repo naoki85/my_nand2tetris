@@ -73,16 +73,20 @@ func (p *Parser) Advance() {
 func (p *Parser) CommandType() string {
 	if (regexp.MustCompile(`^push`).MatchString(p.row)) {
 		return CPush
-	} else if (regexp.MustCompile(`^add`).MatchString(p.row)) {
-		return CArithmetic
+	} else if (regexp.MustCompile(`^pop`).MatchString(p.row)) {
+		return CPop
 	} else {
-		return ""
+		return CArithmetic
 	}
 }
 
 func (p *Parser) Arg1() string {
 	if p.CommandType() == CArithmetic {
-		return "add"
+		switch p.row {
+		case "add": return "add"
+		case "eq": return "eq"
+		default: return ""
+		}
 	}
 	return strings.Split(p.row, " ")[1]
 }
