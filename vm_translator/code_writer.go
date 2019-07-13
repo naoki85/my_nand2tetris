@@ -99,13 +99,113 @@ func (c *CodeWriter) WriteArithmetic(command string) {
 func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
 	var output string
 	if command == CPush {
-		output = "@" + strconv.Itoa(index) + "\n"
-		output = output + "D=A\n"
-		output = output + "@SP\n"
+		switch segment {
+		case "constant":
+			output = "@" + strconv.Itoa(index) + "\n"
+			output = output + "D=A\n"
+			output = output + "@SP\n"
+			output = output + "A=M\n"
+			output = output + "M=D\n"
+			output = output + "@SP\n"
+			output = output + "M=M+1"
+		case "local":
+			output = output + "@LCL\n"
+			output = output + "A=M\n"
+			output = output + "D=M\n"
+			output = output + "@SP\n"
+			output = output + "A=M\n"
+			output = output + "M=D\n"
+			output = output + "@SP\n"
+			output = output + "M=M+1"
+		case "that":
+			output = output + "@THAT\n"
+			output = output + "A=M\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "D=M\n"
+			output = output + "@SP\n"
+			output = output + "A=M\n"
+			output = output + "M=D\n"
+			output = output + "@SP\n"
+			output = output + "M=M+1"
+		case "this":
+			output = output + "@THIS\n"
+			output = output + "A=M\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "D=M\n"
+			output = output + "@SP\n"
+			output = output + "A=M\n"
+			output = output + "M=D\n"
+			output = output + "@SP\n"
+			output = output + "M=M+1"
+		case "argument":
+			output = output + "@ARG\n"
+			output = output + "A=M\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "D=M\n"
+			output = output + "@SP\n"
+			output = output + "A=M\n"
+			output = output + "M=D\n"
+			output = output + "@SP\n"
+			output = output + "M=M+1"
+		case "temp":
+			output = output + "@5\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "D=M\n"
+			output = output + "@SP\n"
+			output = output + "A=M\n"
+			output = output + "M=D\n"
+			output = output + "@SP\n"
+			output = output + "M=M+1"
+		default:
+			output = segment
+		}
+	} else if command == CPop {
+		output = "@SP\n"
+		output = output + "M=M-1\n"
 		output = output + "A=M\n"
-		output = output + "M=D\n"
-		output = output + "@SP\n"
-		output = output + "M=M+1"
+		output = output + "D=M\n"
+		switch segment {
+		case "local":
+			output = output + "@LCL\n"
+			output = output + "A=M\n"
+			output = output + "M=D"
+		case "argument":
+			output = output + "@ARG\n"
+			output = output + "A=M\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "M=D"
+		case "this":
+			output = output + "@THIS\n"
+			output = output + "A=M\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "M=D"
+		case "that":
+			output = output + "@THAT\n"
+			output = output + "A=M\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "M=D"
+		case "temp":
+			output = output + "@5\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "M=D"
+		default:
+		}
 	}
 	c.write(output + "\n")
 }

@@ -81,13 +81,6 @@ func (p *Parser) CommandType() string {
 }
 
 func (p *Parser) Arg1() string {
-	if p.CommandType() == CArithmetic {
-		switch p.row {
-		case "add": return "add"
-		case "eq": return "eq"
-		default: return ""
-		}
-	}
 	return strings.Split(p.row, " ")[1]
 }
 

@@ -24,7 +24,7 @@ func main() {
 	defer codeWriter.Close()
 
 	for true {
-		if parser.CommandType() == CPush {
+		if parser.CommandType() == CPush || parser.CommandType() == CPop {
 			index, err := strconv.Atoi(parser.Arg2())
 			if err != nil {
 				fmt.Printf("err: Could not convert integer from string %s", err.Error())
