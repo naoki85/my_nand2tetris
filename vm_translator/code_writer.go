@@ -141,6 +141,17 @@ func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
 			output = output + "M=D\n"
 			output = output + "@SP\n"
 			output = output + "M=M+1"
+		case "pointer":
+			output = output + "@3\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "D=M\n"
+			output = output + "@SP\n"
+			output = output + "A=M\n"
+			output = output + "M=D\n"
+			output = output + "@SP\n"
+			output = output + "M=M+1"
 		case "argument":
 			output = output + "@ARG\n"
 			output = output + "A=M\n"
@@ -194,6 +205,12 @@ func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
 		case "that":
 			output = output + "@THAT\n"
 			output = output + "A=M\n"
+			for i := 1; i <= index; i++ {
+				output = output + "A=A+1\n"
+			}
+			output = output + "M=D"
+		case "pointer":
+			output = output + "@3\n"
 			for i := 1; i <= index; i++ {
 				output = output + "A=A+1\n"
 			}
