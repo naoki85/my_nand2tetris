@@ -4,18 +4,66 @@ import (
 	"os"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type CodeWriter struct {
 	outputFileStream *os.File
 	labelNumber int
+	labelReturnNumber int
 }
 
 func InitializeCodeWriter(fileName string) CodeWriter {
 	c := CodeWriter{}
 	c.SetFileName(fileName)
 	c.labelNumber = 1
+	c.labelReturnNumber = 0
+	c.init()
 	return c
+}
+
+func (c *CodeWriter) init() {
+	c.writeCodes([]string{
+		fmt.Sprintf("@%d", 256),
+		"D=A",
+		"@SP",
+		"M=D",
+	})
+
+	// return label
+	c.labelReturnNumber++
+	label := "_RETURN_LABEL_" + strconv.Itoa(c.labelReturnNumber)
+	c.writeCodes([]string{fmt.Sprintf("@%s", label), "D=A"})
+
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@LCL", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@ARG", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@THIS", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@THAT", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{
+		"@SP",
+		"D=M",
+		"@5",
+		"D=D-A",
+		"@0",
+		"D=D-A",
+		"@ARG",
+		"M=D",
+		"@SP",
+		"D=M",
+		"@LCL",
+		"M=D",
+	})
+
+	c.writeCodes([]string{
+		"@Sys.init",
+		"0;JMP",
+		fmt.Sprintf("(%s)", label),
+	})
 }
 
 func (c *CodeWriter) SetFileName(fileName string) {
@@ -233,6 +281,22 @@ func (c *CodeWriter) Close() {
 
 func (c *CodeWriter) write(output string) {
 	_, err := c.outputFileStream.Write(([]byte)(output))
+	if err != nil {
+		fmt.Printf("err: Could not write code %s", err.Error())
+		os.Exit(5)
+	}
+}
+
+func (c *CodeWriter) pushFromDRegister() {
+	slice := []string{
+		"@SP", "A=M", "M=D", "@SP", "M=M+1",
+	}
+	c.writeCodes(slice)
+}
+
+func (c *CodeWriter) writeCodes(slice []string) {
+	output := strings.Join(slice, "\n")
+	_, err := c.outputFileStream.Write(([]byte)(output + "\n"))
 	if err != nil {
 		fmt.Printf("err: Could not write code %s", err.Error())
 		os.Exit(5)
