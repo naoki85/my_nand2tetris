@@ -76,215 +76,140 @@ func (c *CodeWriter) SetFileName(fileName string) {
 }
 
 func (c *CodeWriter) WriteArithmetic(command string) {
-	var output string
-	var symbolOutput string
 	switch command {
 	case "add", "sub":
-		output = "@SP\nM=M-1\nA=M\nD=M\n"
-		output = output + "@SP\nM=M-1\nA=M\n"
+		var output string
+		c.popToMRegister()
+		c.writeCodes([]string{"D=M"})
+		c.popToMRegister()
 		if command == "add" {
-			output = output + "D=D+M\n"
+			output = "D=D+M"
 		} else {
-			output = output + "D=M-D\n"
+			output = "D=M-D"
 		}
-		output = output + "@SP\n"
-		output = output + "A=M\n"
-		output = output + "M=D\n"
-		output = output + "@SP\nM=M+1"
+		c.writeCodes([]string{output})
+		c.pushFromDRegister()
 	case "neg":
-		output = "@SP\n"
-		output = output + "A=M-1\n"
-		output = output + "M=-M"
+		c.writeCodes([]string{"@SP", "A=M-1", "M=-M"})
 	case "and":
-		output = "@SP\nM=M-1\nA=M\nD=M\n"
-		output = output + "@SP\nM=M-1\nA=M\n"
-		output = output + "D=D&M\n"
-		output = output + "@SP\n"
-		output = output + "A=M\n"
-		output = output + "M=D\n"
-		output = output + "@SP\nM=M+1"
+		c.popToMRegister()
+		c.writeCodes([]string{"D=M"})
+		c.popToMRegister()
+		c.writeCodes([]string{"D=D&M"})
+		c.pushFromDRegister()
 	case "or":
-		output = "@SP\nM=M-1\nA=M\nD=M\n"
-		output = output + "@SP\nM=M-1\nA=M\n"
-		output = output + "D=D|M\n"
-		output = output + "@SP\n"
-		output = output + "A=M\n"
-		output = output + "M=D\n"
-		output = output + "@SP\nM=M+1"
+		c.popToMRegister()
+		c.writeCodes([]string{"D=M"})
+		c.popToMRegister()
+		c.writeCodes([]string{"D=D|M"})
+		c.pushFromDRegister()
 	case "not":
-		output = "@SP\n"
-		output = output + "A=M-1\n"
-		output = output + "M=!M"
+		c.writeCodes([]string{"@SP", "A=M-1", "M=!M"})
 	case "eq", "lt", "gt":
-		output = "@SP\nM=M-1\nA=M\nD=M\n"
-		output = output + "@SP\nM=M-1\nA=M\nD=M-D\n"
+		c.popToMRegister()
+		c.writeCodes([]string{"D=M"})
+		c.popToMRegister()
+		c.writeCodes([]string{"D=M-D"})
+		var outputSlice []string
+		var symbolOutput []string
 		numberStr := strconv.Itoa(c.labelNumber)
-		output = output + "@LABEL" + numberStr + "\n"
-		symbolOutput = "(LABEL" + numberStr + ")\nD=-1\n"
+		outputSlice = append(outputSlice, "@LABEL" + numberStr)
+		symbolOutput = append(symbolOutput, "(LABEL" + numberStr + ")")
+		symbolOutput = append(symbolOutput, "D=-1")
 		c.labelNumber++
 
 		if command == "eq" {
-			output = output + "D;JEQ\nD=0\n"
+			outputSlice = append(outputSlice, "D;JEQ")
 		} else if command == "lt" {
-			output = output + "D;JLT\nD=0\n"
+			outputSlice = append(outputSlice, "D;JLT")
 		} else {
-			output = output + "D;JGT\nD=0\n"
+			outputSlice = append(outputSlice, "D;JGT")
 		}
-		
+		outputSlice = append(outputSlice, "D=0")
 		numberStr = strconv.Itoa(c.labelNumber)
-		output = output + "@LABEL" + numberStr + "\n"
-		symbolOutput = symbolOutput + "(LABEL" + numberStr + ")\n@SP\nA=M\nM=D\n"
+		outputSlice = append(outputSlice, "@LABEL" + numberStr)
+		symbolOutput = append(symbolOutput, "(LABEL" + numberStr + ")")
 		c.labelNumber++
 
-		output = output + "0;JMP\n"
-		output = output + symbolOutput
-		output = output + "@SP\nM=M+1"
-	default: output = ""
+		outputSlice = append(outputSlice, "D;JMP")
+		outputSlice = append(outputSlice, symbolOutput...)
+		c.writeCodes(outputSlice)
+		c.pushFromDRegister()
+	default:
+		fmt.Printf("warning: Invalid command %s", command)
 	}
-	c.write(output + "\n")
 }
 
 func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
-	var output string
 	if command == CPush {
 		switch segment {
 		case "constant":
-			output = "@" + strconv.Itoa(index) + "\n"
-			output = output + "D=A\n"
-			output = output + "@SP\n"
-			output = output + "A=M\n"
-			output = output + "M=D\n"
-			output = output + "@SP\n"
-			output = output + "M=M+1"
+			address := "@" + strconv.Itoa(index)
+			c.writeCodes([]string{address, "D=A"})
+			c.pushFromDRegister()
 		case "local":
-			output = output + "@LCL\n"
-			output = output + "A=M\n"
-			output = output + "D=M\n"
-			output = output + "@SP\n"
-			output = output + "A=M\n"
-			output = output + "M=D\n"
-			output = output + "@SP\n"
-			output = output + "M=M+1"
+			c.writeCodes([]string{"@LCL", "A=M"})
+			c.writeCodes([]string{"D=M"})
+			c.pushFromDRegister()
 		case "that":
-			output = output + "@THAT\n"
-			output = output + "A=M\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "D=M\n"
-			output = output + "@SP\n"
-			output = output + "A=M\n"
-			output = output + "M=D\n"
-			output = output + "@SP\n"
-			output = output + "M=M+1"
+			c.writeCodes([]string{"@THAT", "A=M"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"D=M"})
+			c.pushFromDRegister()
 		case "this":
-			output = output + "@THIS\n"
-			output = output + "A=M\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "D=M\n"
-			output = output + "@SP\n"
-			output = output + "A=M\n"
-			output = output + "M=D\n"
-			output = output + "@SP\n"
-			output = output + "M=M+1"
+			c.writeCodes([]string{"@THIS", "A=M"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"D=M"})
+			c.pushFromDRegister()
 		case "pointer":
-			output = output + "@3\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "D=M\n"
-			output = output + "@SP\n"
-			output = output + "A=M\n"
-			output = output + "M=D\n"
-			output = output + "@SP\n"
-			output = output + "M=M+1"
+			c.writeCodes([]string{"@3"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"D=M"})
+			c.pushFromDRegister()
 		case "argument":
-			output = output + "@ARG\n"
-			output = output + "A=M\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "D=M\n"
-			output = output + "@SP\n"
-			output = output + "A=M\n"
-			output = output + "M=D\n"
-			output = output + "@SP\n"
-			output = output + "M=M+1"
+			c.writeCodes([]string{"@ARG", "A=M"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"D=M"})
+			c.pushFromDRegister()
 		case "temp":
-			output = output + "@5\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "D=M\n"
-			output = output + "@SP\n"
-			output = output + "A=M\n"
-			output = output + "M=D\n"
-			output = output + "@SP\n"
-			output = output + "M=M+1"
+			c.writeCodes([]string{"@5"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"D=M"})
+			c.pushFromDRegister()
 		default:
-			output = segment
 		}
 	} else if command == CPop {
-		output = "@SP\n"
-		output = output + "M=M-1\n"
-		output = output + "A=M\n"
-		output = output + "D=M\n"
+		c.writeCodes([]string{"@SP", "M=M-1", "A=M", "D=M"})
 		switch segment {
 		case "local":
-			output = output + "@LCL\n"
-			output = output + "A=M\n"
-			output = output + "M=D"
+			c.writeCodes([]string{"@LCL", "A=M", "M=D"})
 		case "argument":
-			output = output + "@ARG\n"
-			output = output + "A=M\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "M=D"
+			c.writeCodes([]string{"@ARG", "A=M"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"M=D"})
 		case "this":
-			output = output + "@THIS\n"
-			output = output + "A=M\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "M=D"
+			c.writeCodes([]string{"@THIS", "A=M"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"M=D"})
 		case "that":
-			output = output + "@THAT\n"
-			output = output + "A=M\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "M=D"
+			c.writeCodes([]string{"@THAT", "A=M"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"M=D"})
 		case "pointer":
-			output = output + "@3\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "M=D"
+			c.writeCodes([]string{"@3"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"M=D"})
 		case "temp":
-			output = output + "@5\n"
-			for i := 1; i <= index; i++ {
-				output = output + "A=A+1\n"
-			}
-			output = output + "M=D"
+			c.writeCodes([]string{"@5"})
+			c.increaseAddress(index)
+			c.writeCodes([]string{"M=D"})
 		default:
 		}
 	}
-	c.write(output + "\n")
 }
 
 func (c *CodeWriter) Close() {
 	c.outputFileStream.Close()
-}
-
-func (c *CodeWriter) write(output string) {
-	_, err := c.outputFileStream.Write(([]byte)(output))
-	if err != nil {
-		fmt.Printf("err: Could not write code %s", err.Error())
-		os.Exit(5)
-	}
 }
 
 func (c *CodeWriter) pushFromDRegister() {
@@ -292,6 +217,21 @@ func (c *CodeWriter) pushFromDRegister() {
 		"@SP", "A=M", "M=D", "@SP", "M=M+1",
 	}
 	c.writeCodes(slice)
+}
+
+func (c *CodeWriter) popToMRegister() {
+	slice := []string{
+		"@SP", "M=M-1", "A=M",
+	}
+	c.writeCodes(slice)
+}
+
+func (c *CodeWriter) increaseAddress(index int) {
+	var output []string
+	for i := 1; i <= index; i++ {
+		output = append(output, "A=A+1")
+	}
+	c.writeCodes(output)
 }
 
 func (c *CodeWriter) writeCodes(slice []string) {
