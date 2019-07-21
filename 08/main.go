@@ -24,6 +24,9 @@ func main() {
 	
 		outputFilePath := strings.Replace(filePath, ".vm", ".asm", 1)
 		codeWriter := InitializeCodeWriter(outputFilePath)
+		sliceFileName := strings.Split(filePath, "/")
+		fileName := strings.Split(sliceFileName[len(sliceFileName) - 1], ".")[0]
+		codeWriter.SetCurrentFileName(fileName)
 		defer codeWriter.Close()
 		translate(parser, &codeWriter)
 	} else if fInfo, _ := os.Stat(filePath); fInfo.IsDir() {
@@ -34,6 +37,8 @@ func main() {
 		defer codeWriter.Close()
 		for _, f := range files {
 			if !regexp.MustCompile(`.vm$`).MatchString(f.Name()) { continue }
+			fileName := strings.Split(f.Name(), ".")[0]
+			codeWriter.SetCurrentFileName(fileName)
 			parser, err := InitializeParser(filePath + "/" + f.Name())
 			if err != nil {
 				fmt.Printf("err: Could not init parser %s", err.Error())
@@ -49,6 +54,7 @@ func main() {
 
 func translate(parser Parser, codeWriter *CodeWriter) {
 	for true {
+		codeWriter.WriteComment(parser.row)
 		if parser.CommandType() == CPush || parser.CommandType() == CPop {
 			index, err := strconv.Atoi(parser.Arg2())
 			if err != nil {

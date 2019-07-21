@@ -12,6 +12,7 @@ type CodeWriter struct {
 	labelNumber int
 	labelReturnNumber int
 	currentFunctionName string
+	currentFileName string
 }
 
 func InitializeCodeWriter(fileName string) CodeWriter {
@@ -146,27 +147,46 @@ func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
 			c.increaseAddress(index)
 			c.writeCodes([]string{"D=M"})
 			c.pushFromDRegister()
+		case "static":
+			c.writeCodes([]string{
+				fmt.Sprintf("@%s.%d", c.currentFileName, index),
+				"D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1",
+			})
 		default:
 		}
 	} else if command == CPop {
-		c.writeCodes([]string{"@SP", "M=M-1", "A=M", "D=M"})
+		c.popToMRegister()
+		c.writeCodes([]string{"D=M"})
 		switch segment {
 		case "local":
 			c.writeCodes([]string{"@LCL", "A=M"})
+			c.increaseAddress(index)
 		case "argument":
 			c.writeCodes([]string{"@ARG", "A=M"})
+			c.increaseAddress(index)
 		case "this":
 			c.writeCodes([]string{"@THIS", "A=M"})
+			c.increaseAddress(index)
 		case "that":
 			c.writeCodes([]string{"@THAT", "A=M"})
+			c.increaseAddress(index)
 		case "pointer":
 			c.writeCodes([]string{"@3"})
+			c.increaseAddress(index)
 		case "temp":
 			c.writeCodes([]string{"@5"})
+			c.increaseAddress(index)
+		case "static":
+			c.writeCodes([]string{
+				fmt.Sprintf("@%s.%d", c.currentFileName, index),
+			})
 		}
-		c.increaseAddress(index)
 		c.writeCodes([]string{"M=D"})
 	}
+}
+
+func (c *CodeWriter) SetCurrentFileName(fileName string) {
+	c.currentFileName = fileName
 }
 
 func (c *CodeWriter) WriteLabel(label string) {
@@ -272,6 +292,10 @@ func (c *CodeWriter) WriteReturn() {
 		// goto return-address
 		"@R14", "A=M", "0;JMP",
 	})
+}
+
+func (c *CodeWriter) WriteComment(line string) {
+	c.writeCodes([]string{fmt.Sprintf("// %s", line)})
 }
 
 func (c *CodeWriter) Close() {
