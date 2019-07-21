@@ -81,6 +81,10 @@ func (p *Parser) CommandType() string {
 		return CIf
 	} else if (regexp.MustCompile(`^goto`).MatchString(p.row)) {
 		return CGoto
+	} else if (regexp.MustCompile(`^function`).MatchString(p.row)) {
+		return CFunction
+	} else if (regexp.MustCompile(`^return`).MatchString(p.row)) {
+		return CReturn
 	} else {
 		return CArithmetic
 	}

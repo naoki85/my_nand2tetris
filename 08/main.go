@@ -39,6 +39,11 @@ func main() {
 			codeWriter.WriteLabel(parser.row)
 		} else if parser.CommandType() == CGoto {
 			codeWriter.WriteGoto(parser.row)
+		} else if parser.CommandType() == CFunction {
+			arg, _ := strconv.Atoi(parser.Arg2())
+			codeWriter.WriteFunction(parser.Arg1(), arg)
+		} else if parser.CommandType() == CReturn {
+			codeWriter.WriteReturn()
 		}
 
 		if !parser.HasMoreCommand() {

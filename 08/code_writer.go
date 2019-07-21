@@ -149,6 +149,7 @@ func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
 			c.pushFromDRegister()
 		case "local":
 			c.writeCodes([]string{"@LCL", "A=M"})
+			c.increaseAddress(index)
 			c.writeCodes([]string{"D=M"})
 			c.pushFromDRegister()
 		case "that":
@@ -182,29 +183,20 @@ func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
 		c.writeCodes([]string{"@SP", "M=M-1", "A=M", "D=M"})
 		switch segment {
 		case "local":
-			c.writeCodes([]string{"@LCL", "A=M", "M=D"})
+			c.writeCodes([]string{"@LCL", "A=M"})
 		case "argument":
 			c.writeCodes([]string{"@ARG", "A=M"})
-			c.increaseAddress(index)
-			c.writeCodes([]string{"M=D"})
 		case "this":
 			c.writeCodes([]string{"@THIS", "A=M"})
-			c.increaseAddress(index)
-			c.writeCodes([]string{"M=D"})
 		case "that":
 			c.writeCodes([]string{"@THAT", "A=M"})
-			c.increaseAddress(index)
-			c.writeCodes([]string{"M=D"})
 		case "pointer":
 			c.writeCodes([]string{"@3"})
-			c.increaseAddress(index)
-			c.writeCodes([]string{"M=D"})
 		case "temp":
 			c.writeCodes([]string{"@5"})
-			c.increaseAddress(index)
-			c.writeCodes([]string{"M=D"})
-		default:
 		}
+		c.increaseAddress(index)
+		c.writeCodes([]string{"M=D"})
 	}
 }
 
@@ -224,6 +216,55 @@ func (c *CodeWriter) WriteIf(label string) {
 func (c *CodeWriter) WriteGoto(label string) {
 	c.writeCodes([]string{
 		fmt.Sprintf("@%s", c.parseLabelLine(label)), "0;JMP",
+	})
+}
+
+func (c *CodeWriter) WriteFunction(functionName string, numLocals int) {
+	c.writeCodes([]string{
+		fmt.Sprintf("(%s)", functionName), "D=0",
+	})
+	for i := 1; i <= numLocals; i++ {
+		c.pushFromDRegister()
+	}
+	// self.current_function_name = function_name
+}
+
+func (c *CodeWriter) WriteReturn() {
+	c.writeCodes([]string{
+		"@LCL", "D=M",
+		// R13 = FRAME = LCL
+		"@R13", "M=D",
+		"@5", "D=A",
+		// D = *(FRAME-5) = return-address
+		"@R13", "A=M-D", "D=M",
+		// R14 = return-address
+		"@R14", "M=D",
+	})
+	c.popToMRegister()
+	c.writeCodes([]string{
+		"D=M", "@ARG",
+		// M = *ARG
+		"A=M",
+		// *ARG = pop()
+		"M=D",
+		"@ARG", "D=M+1",
+		// SP = ARG + 1
+		"@SP", "M=D",
+		// A = FRAME-1, R13 = FRAME-1
+		"@R13", "AM=M-1", "D=M",
+		// THAT = *(FRAME-1)
+		"@THAT", "M=D",
+		"@R13", "AM=M-1", "D=M",
+		// THIS = *(FRAME-2)
+		"@THIS", "M=D",
+		"@R13", "AM=M-1", "D=M",
+		// ARG = *(FRAME-3)
+		"@ARG", "M=D",
+		"@R13", "AM=M-1", "D=M",
+		// LCL = *(FRAME-4)
+		"@LCL", "M=D",
+		// goto return-address
+		"@R14", "A=M", "0;JMP",
 	})
 }
 
