@@ -221,6 +221,12 @@ func (c *CodeWriter) WriteIf(label string) {
 	})
 }
 
+func (c *CodeWriter) WriteGoto(label string) {
+	c.writeCodes([]string{
+		fmt.Sprintf("@%s", c.parseLabelLine(label)), "0;JMP",
+	})
+}
+
 func (c *CodeWriter) Close() {
 	c.outputFileStream.Close()
 }

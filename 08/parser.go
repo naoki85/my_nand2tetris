@@ -79,6 +79,8 @@ func (p *Parser) CommandType() string {
 		return CLabel
 	} else if (regexp.MustCompile(`^if-`).MatchString(p.row)) {
 		return CIf
+	} else if (regexp.MustCompile(`^goto`).MatchString(p.row)) {
+		return CGoto
 	} else {
 		return CArithmetic
 	}

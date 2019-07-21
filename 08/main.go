@@ -37,6 +37,8 @@ func main() {
 			codeWriter.WriteIf(parser.row)
 		} else if parser.CommandType() == CLabel {
 			codeWriter.WriteLabel(parser.row)
+		} else if parser.CommandType() == CGoto {
+			codeWriter.WriteGoto(parser.row)
 		}
 
 		if !parser.HasMoreCommand() {
