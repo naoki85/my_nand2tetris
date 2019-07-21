@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -13,16 +15,39 @@ func main() {
 		os.Exit(1)
 	}
 	filePath := os.Args[1]
-	parser, err := InitializeParser(filePath)
-	if err != nil {
-		fmt.Printf("err: Could not init parser %s", err.Error())
+	if regexp.MustCompile(`.vm$`).MatchString(filePath) {
+		parser, err := InitializeParser(filePath)
+		if err != nil {
+			fmt.Printf("err: Could not init parser %s", err.Error())
+			os.Exit(2)
+		}
+	
+		outputFilePath := strings.Replace(filePath, ".vm", ".asm", 1)
+		codeWriter := InitializeCodeWriter(outputFilePath)
+		defer codeWriter.Close()
+		translate(parser, &codeWriter)
+	} else if fInfo, _ := os.Stat(filePath); fInfo.IsDir() {
+		files, _ := ioutil.ReadDir(filePath)
+		sliceFilePath := strings.Split(filePath, "/")
+		baseName := sliceFilePath[len(sliceFilePath) - 1]
+		codeWriter := InitializeCodeWriter(filePath + "/" + baseName + ".asm")
+		defer codeWriter.Close()
+		for _, f := range files {
+			if !regexp.MustCompile(`.vm$`).MatchString(f.Name()) { continue }
+			parser, err := InitializeParser(filePath + "/" + f.Name())
+			if err != nil {
+				fmt.Printf("err: Could not init parser %s", err.Error())
+				os.Exit(2)
+			}
+			translate(parser, &codeWriter)
+		}
+	} else {
+		fmt.Println("Err: Invalid file path")
 		os.Exit(2)
 	}
+}
 
-	outputFilePath := strings.Replace(filePath, ".vm", ".asm", 1)
-	codeWriter := InitializeCodeWriter(outputFilePath)
-	defer codeWriter.Close()
-
+func translate(parser Parser, codeWriter *CodeWriter) {
 	for true {
 		if parser.CommandType() == CPush || parser.CommandType() == CPop {
 			index, err := strconv.Atoi(parser.Arg2())
@@ -44,6 +69,9 @@ func main() {
 			codeWriter.WriteFunction(parser.Arg1(), arg)
 		} else if parser.CommandType() == CReturn {
 			codeWriter.WriteReturn()
+		} else if parser.CommandType() == CCall {
+			arg, _ := strconv.Atoi(parser.Arg2())
+			codeWriter.WriteCall(parser.Arg1(), arg)
 		}
 
 		if !parser.HasMoreCommand() {

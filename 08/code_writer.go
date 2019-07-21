@@ -11,6 +11,7 @@ type CodeWriter struct {
 	outputFileStream *os.File
 	labelNumber int
 	labelReturnNumber int
+	currentFunctionName string
 }
 
 func InitializeCodeWriter(fileName string) CodeWriter {
@@ -18,7 +19,8 @@ func InitializeCodeWriter(fileName string) CodeWriter {
 	c.SetFileName(fileName)
 	c.labelNumber = 1
 	c.labelReturnNumber = 0
-	// c.init()
+	c.currentFunctionName = ""
+	c.init()
 	return c
 }
 
@@ -30,40 +32,7 @@ func (c *CodeWriter) init() {
 		"M=D",
 	})
 
-	// return label
-	c.labelReturnNumber++
-	label := "_RETURN_LABEL_" + strconv.Itoa(c.labelReturnNumber)
-	c.writeCodes([]string{fmt.Sprintf("@%s", label), "D=A"})
-
-	c.pushFromDRegister()
-	c.writeCodes([]string{"@LCL", "D=M"})
-	c.pushFromDRegister()
-	c.writeCodes([]string{"@ARG", "D=M"})
-	c.pushFromDRegister()
-	c.writeCodes([]string{"@THIS", "D=M"})
-	c.pushFromDRegister()
-	c.writeCodes([]string{"@THAT", "D=M"})
-	c.pushFromDRegister()
-	c.writeCodes([]string{
-		"@SP",
-		"D=M",
-		"@5",
-		"D=D-A",
-		"@0",
-		"D=D-A",
-		"@ARG",
-		"M=D",
-		"@SP",
-		"D=M",
-		"@LCL",
-		"M=D",
-	})
-
-	c.writeCodes([]string{
-		"@Sys.init",
-		"0;JMP",
-		fmt.Sprintf("(%s)", label),
-	})
+	c.WriteCall("Sys.init", 0)
 }
 
 func (c *CodeWriter) SetFileName(fileName string) {
@@ -131,7 +100,7 @@ func (c *CodeWriter) WriteArithmetic(command string) {
 		symbolOutput = append(symbolOutput, "(LABEL" + numberStr + ")")
 		c.labelNumber++
 
-		outputSlice = append(outputSlice, "D;JMP")
+		outputSlice = append(outputSlice, "0;JMP")
 		outputSlice = append(outputSlice, symbolOutput...)
 		c.writeCodes(outputSlice)
 		c.pushFromDRegister()
@@ -226,7 +195,44 @@ func (c *CodeWriter) WriteFunction(functionName string, numLocals int) {
 	for i := 1; i <= numLocals; i++ {
 		c.pushFromDRegister()
 	}
-	// self.current_function_name = function_name
+	c.currentFunctionName = functionName
+}
+
+func (c *CodeWriter) WriteCall(functionName string, numLocals int) {
+	// return label
+	c.labelReturnNumber++
+	label := "_RETURN_LABEL_" + strconv.Itoa(c.labelReturnNumber)
+	c.writeCodes([]string{fmt.Sprintf("@%s", label), "D=A"})
+
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@LCL", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@ARG", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@THIS", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{"@THAT", "D=M"})
+	c.pushFromDRegister()
+	c.writeCodes([]string{
+		"@SP",
+		"D=M",
+		"@5",
+		"D=D-A",
+		fmt.Sprintf("@%d", numLocals),
+		"D=D-A",
+		"@ARG",
+		"M=D",
+		"@SP",
+		"D=M",
+		"@LCL",
+		"M=D",
+	})
+
+	c.writeCodes([]string{
+		fmt.Sprintf("@%s", functionName),
+		"0;JMP",
+		fmt.Sprintf("(%s)", label),
+	})
 }
 
 func (c *CodeWriter) WriteReturn() {
@@ -305,6 +311,12 @@ func (c *CodeWriter) writeCodes(slice []string) {
 }
 
 func (c *CodeWriter) parseLabelLine(label string) string {
+	var functionName string
+	if c.currentFunctionName == "" {
+		functionName = "null"
+	} else {
+		functionName = c.currentFunctionName
+	}
 	text := strings.Split(label, " ")
-	return fmt.Sprintf("null$%s", text[1])
+	return fmt.Sprintf("%s$%s", functionName, text[1])
 }
