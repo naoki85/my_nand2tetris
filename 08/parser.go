@@ -75,6 +75,10 @@ func (p *Parser) CommandType() string {
 		return CPush
 	} else if (regexp.MustCompile(`^pop`).MatchString(p.row)) {
 		return CPop
+	} else if (regexp.MustCompile(`^label`).MatchString(p.row)) {
+		return CLabel
+	} else if (regexp.MustCompile(`^if-`).MatchString(p.row)) {
+		return CIf
 	} else {
 		return CArithmetic
 	}

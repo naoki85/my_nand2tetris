@@ -18,7 +18,7 @@ func InitializeCodeWriter(fileName string) CodeWriter {
 	c.SetFileName(fileName)
 	c.labelNumber = 1
 	c.labelReturnNumber = 0
-	c.init()
+	// c.init()
 	return c
 }
 
@@ -208,6 +208,19 @@ func (c *CodeWriter) WritePushPop(command string, segment string, index int) {
 	}
 }
 
+func (c *CodeWriter) WriteLabel(label string) {
+	c.writeCodes([]string{
+		fmt.Sprintf("(%s)", c.parseLabelLine(label)),
+	})
+}
+
+func (c *CodeWriter) WriteIf(label string) {
+	c.popToMRegister()
+	c.writeCodes([]string{
+		"D=M", fmt.Sprintf("@%s", c.parseLabelLine(label)), "D;JNE",
+	})
+}
+
 func (c *CodeWriter) Close() {
 	c.outputFileStream.Close()
 }
@@ -228,6 +241,7 @@ func (c *CodeWriter) popToMRegister() {
 
 func (c *CodeWriter) increaseAddress(index int) {
 	var output []string
+	if index < 1 { return }
 	for i := 1; i <= index; i++ {
 		output = append(output, "A=A+1")
 	}
@@ -241,4 +255,9 @@ func (c *CodeWriter) writeCodes(slice []string) {
 		fmt.Printf("err: Could not write code %s", err.Error())
 		os.Exit(5)
 	}
+}
+
+func (c *CodeWriter) parseLabelLine(label string) string {
+	text := strings.Split(label, " ")
+	return fmt.Sprintf("null$%s", text[1])
 }

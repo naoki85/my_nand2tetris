@@ -33,6 +33,10 @@ func main() {
 			codeWriter.WritePushPop(parser.CommandType(), parser.Arg1(), index)
 		} else if parser.CommandType() == CArithmetic {
 			codeWriter.WriteArithmetic(parser.row)
+		} else if parser.CommandType() == CIf {
+			codeWriter.WriteIf(parser.row)
+		} else if parser.CommandType() == CLabel {
+			codeWriter.WriteLabel(parser.row)
 		}
 
 		if !parser.HasMoreCommand() {
