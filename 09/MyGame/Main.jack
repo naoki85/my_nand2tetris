@@ -1,10 +1,10 @@
 class Main {
   function void main() {
-    var List v;
-    let v = List.new(5, null);
-    let v = List.new(2, List.new(3, v));
-    do v.print();
-    do v.dispose();
+    var Fraction a, b, c;
+    let a = Fraction.new(2, 3);
+    let b = Fraction.new(1, 5);
+    let c = a.plus(b);
+    do c.print();
     return;
   }
 }
