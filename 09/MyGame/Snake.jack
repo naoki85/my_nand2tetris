@@ -1,0 +1,49 @@
+class Snake {
+  field int x1, y1, x2, y2;
+
+  constructor Snake new(int a1, int b1, int a2, int b2) {
+    let x1 = a1;
+    let y1 = b1;
+    let x2 = a2;
+    let y2 = b2;
+    do draw();
+    return this;
+  }
+
+  method void dispose() {
+    do Memory.deAlloc(this);
+    return;
+  }
+
+  method void draw() {
+    do Screen.setColor(true);
+    do Screen.drawLine(x1, y1, x2, y2);
+    return;
+  }
+
+  method void erase() {
+    do Screen.setColor(false);
+    do Screen.drawLine(x1, y1, x2, y2);
+    return;
+  }
+
+  method void moveLeft() {
+    if (x1 > 10) {
+      do erase();
+      let x1 = x1 - 10;
+      let x2 = x2 - 10;
+      do draw();
+    }
+    return;
+  }
+
+  method void moveRight() {
+    if ((x2 + 10) < 510) {
+      do erase();
+      let x1 = x1 + 10;
+      let x2 = x2 + 10;
+      do draw();
+    }
+    return;
+  }
+}
